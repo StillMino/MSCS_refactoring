@@ -5,6 +5,7 @@
 #include <QList>
 #include <QMap>
 #include <QVariant>
+#include <QDir>
 
 namespace mscs {
 

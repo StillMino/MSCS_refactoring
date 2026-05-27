@@ -9,6 +9,7 @@
 #include <QStandardPaths>
 #include <QDir>
 #include <QDebug>
+#include <QHeaderView>
 
 namespace mscs {
 
@@ -326,19 +327,19 @@ void MainWindow::loadSpecifierConfigs(ModuleType module) {
     }
 }
 
-void MainWindow::showExportConfigDetails(const ExportConfig& config) {
-    m_currentExportConfig = config;
+void MainWindow::showExportConfigDetails(const ExportProfile& config) {
+    m_currentExportProfile = config;
     updateProfileList();
 }
 
-void MainWindow::showSpecifierConfigDetails(const SpecifierConfig& config) {
-    m_currentSpecifierConfig = config;
+void MainWindow::showSpecifierConfigDetails(const SpecifierProfile& config) {
+    m_currentSpecifierProfile = config;
     
     // Заполнение комбобоксов профилями
     m_exportProfileRefCombo->clear();
     m_exportProfileRefOutCombo->clear();
     
-    for (const auto& profile : m_currentExportConfig.profiles) {
+    for (const auto& profile : m_currentExportProfile.datasetProfile.table.fields) {
         m_exportProfileRefCombo->addItem(profile.name, profile.id);
         m_exportProfileRefOutCombo->addItem(profile.name, profile.id);
     }
@@ -370,7 +371,7 @@ void MainWindow::showSpecifierConfigDetails(const SpecifierConfig& config) {
 void MainWindow::updateProfileList() {
     m_profileTree->clear();
     
-    for (const auto& profile : m_currentExportConfig.profiles) {
+    for (const auto& profile : m_currentExportProfile.datasetProfile.table.fields) {
         QTreeWidgetItem* item = new QTreeWidgetItem(m_profileTree);
         item->setText(0, profile.name);
         item->setText(1, profile.id);
@@ -453,8 +454,8 @@ void MainWindow::onNewConfig() {
     if (!checkUnsavedChanges()) return;
     
     m_isNewConfig = true;
-    m_currentExportConfig = ExportConfig();
-    m_currentSpecifierConfig = SpecifierConfig();
+    m_currentExportProfile = ExportProfile();
+    m_currentSpecifierProfile = SpecifierProfile();
     m_isModified = false;
     
     m_profileTree->clear();
@@ -493,11 +494,11 @@ void MainWindow::onOpenConfig() {
     
     // Парсинг в зависимости от типа
     if (fileName.contains("Specifications", Qt::CaseInsensitive)) {
-        m_currentSpecifierConfig = m_xmlParser.parseSpecifierConfig(doc);
-        showSpecifierConfigDetails(m_currentSpecifierConfig);
+        m_currentSpecifierProfile = [m_xmlParser.parseSpecifierProfile(doc)](QDomDocument& doc) { SpecifierProfile p; m_xmlParser.parseSpecifierProfile(doc.documentElement(), p); return p; }(doc);
+        showSpecifierConfigDetails(m_currentSpecifierProfile);
     } else {
-        m_currentExportConfig = m_xmlParser.parseExportConfig(doc);
-        showExportConfigDetails(m_currentExportConfig);
+        m_currentExportProfile = m_xmlParser.parseExportProfile(doc);
+        showExportConfigDetails(m_currentExportProfile);
     }
     
     m_isModified = false;
@@ -509,8 +510,8 @@ void MainWindow::onSaveConfig() {
 }
 
 void MainWindow::onSaveAsConfig() {
-    QString defaultName = m_currentExportConfig.name.isEmpty() ? 
-                          "new_config.xml" : m_currentExportConfig.name + ".xml";
+    QString defaultName = m_currentExportProfile.name.isEmpty() ? 
+                          "new_config.xml" : m_currentExportProfile.name + ".xml";
     
     QString fileName = QFileDialog::getSaveFileName(
         this,
@@ -525,7 +526,7 @@ void MainWindow::onSaveAsConfig() {
         fileName += ".xml";
     }
     
-    QDomDocument doc = m_xmlParser.createExportConfigXml(m_currentExportConfig);
+    QDomDocument doc = m_xmlParser.createExportProfileXml(m_currentExportProfile);
     
     QFile file(fileName);
     if (!file.open(QIODevice::WriteOnly)) {
@@ -610,8 +611,8 @@ void MainWindow::onExportConfigSelected(const QString& configName) {
     }
     file.close();
     
-    m_currentExportConfig = m_xmlParser.parseExportConfig(doc);
-    showExportConfigDetails(m_currentExportConfig);
+    m_currentExportProfile = m_xmlParser.parseExportProfile(doc);
+    showExportConfigDetails(m_currentExportProfile);
     
     m_statusLabel->setText(tr("Выбрана конфигурация экспорта: ") + configName);
 }
@@ -637,10 +638,10 @@ void MainWindow::onSpecifierConfigSelected(const QString& configName) {
     }
     file.close();
     
-    m_currentSpecifierConfig = m_xmlParser.parseSpecifierConfig(doc);
+    m_currentSpecifierProfile = [m_xmlParser.parseSpecifierProfile(doc)](QDomDocument& doc) { SpecifierProfile p; m_xmlParser.parseSpecifierProfile(doc.documentElement(), p); return p; }(doc);
     
     // Сначала нужно загрузить связанный экспорт
-    showSpecifierConfigDetails(m_currentSpecifierConfig);
+    showSpecifierConfigDetails(m_currentSpecifierProfile);
     
     m_statusLabel->setText(tr("Выбрана конфигурация спецификатора: ") + configName);
 }
@@ -651,7 +652,7 @@ void MainWindow::onAddProfile() {
     newProfile.name = tr("Новый профиль");
     newProfile.enabled = true;
     
-    m_currentExportConfig.profiles.append(newProfile);
+    m_currentExportProfile.datasetProfile.table.fields.append(newProfile);
     updateProfileList();
     setModified(true);
     
@@ -688,12 +689,12 @@ void MainWindow::onDeleteProfile() {
     if (reply == QMessageBox::Yes) {
         ExportProfile profile = currentItem->data(0, Qt::UserRole).value<ExportProfile>();
         
-        auto it = std::find_if(m_currentExportConfig.profiles.begin(), 
-                               m_currentExportConfig.profiles.end(),
+        auto it = std::find_if(m_currentExportProfile.datasetProfile.table.fields.begin(), 
+                               m_currentExportProfile.datasetProfile.table.fields.end(),
                                [&profile](const ExportProfile& p) { return p.id == profile.id; });
         
-        if (it != m_currentExportConfig.profiles.end()) {
-            m_currentExportConfig.profiles.erase(it);
+        if (it != m_currentExportProfile.datasetProfile.table.fields.end()) {
+            m_currentExportProfile.datasetProfile.table.fields.erase(it);
             updateProfileList();
             setModified(true);
             
@@ -715,7 +716,7 @@ void MainWindow::onCloneProfile() {
     cloned.id = QUuid::createUuid().toString();
     cloned.name = original.name + tr(" (копия)");
     
-    m_currentExportConfig.profiles.append(cloned);
+    m_currentExportProfile.datasetProfile.table.fields.append(cloned);
     updateProfileList();
     setModified(true);
     
@@ -726,10 +727,10 @@ void MainWindow::onSaveChanges() {
     // Сбор данных из UI
     // Сохранение в файл
     
-    QDomDocument doc = m_xmlParser.createExportConfigXml(m_currentExportConfig);
+    QDomDocument doc = m_xmlParser.createExportProfileXml(m_currentExportProfile);
     
     QString filePath = getConfigPath(m_currentModule, true) + "/" + 
-                       m_currentExportConfig.name + ".xml";
+                       m_currentExportProfile.name + ".xml";
     
     QFile file(filePath);
     if (!file.open(QIODevice::WriteOnly)) {

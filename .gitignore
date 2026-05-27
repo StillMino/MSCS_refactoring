@@ -1,16 +1,12 @@
 ```
-# Build artifacts
+# Compiled and build artifacts
 *.o
 *.obj
-*.a
-*.lib
-*.so
-*.dll
 *.exe
+*.dll
+*.so
+*.a
 *.out
-build/
-dist/
-target/
 
 # Dependencies
 node_modules/
@@ -19,36 +15,24 @@ venv/
 __pycache__/
 .mypy_cache/
 .pytest_cache/
+target/
 .gradle/
-.cmake/
 
-# IDE and editor files
+# Logs and temp files
+*.log
+*.tmp
+*.swp
+
+# Editors
 .vscode/
 .idea/
-*.swp
-*.swo
-*.tmp
-
-# Logs
-*.log
 
 # Environment
 .env
 .env.local
 *.env.*
 
-# Coverage
-coverage/
-htmlcov/
-.coverage
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# CMake
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
+# Build directories
+build/
+dist/
 ```

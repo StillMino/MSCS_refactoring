@@ -5,6 +5,7 @@
 #include <QString>
 #include <QList>
 #include "types.h"
+#include "xml_parser.h"
 
 namespace mscs {
 
@@ -15,39 +16,40 @@ public:
     explicit SpecificationManager(QObject *parent = nullptr);
     ~SpecificationManager();
 
-    // Загрузка конфигурации экспорта из файла
-    bool loadExportConfig(const QString& filePath, ExportConfig& config);
+    // Загрузка профиля экспорта из файла
+    bool loadExportProfile(const QString& filePath, ExportProfile& profile);
     
-    // Сохранение конфигурации экспорта в файл
-    bool saveExportConfig(const QString& filePath, const ExportConfig& config);
+    // Сохранение профиля экспорта в файл
+    bool saveExportProfile(const QString& filePath, const ExportProfile& profile);
     
-    // Загрузка конфигурации спецификатора из файла
-    bool loadSpecifierConfig(const QString& filePath, SpecifierConfig& config);
+    // Загрузка профиля спецификатора из файла
+    bool loadSpecifierProfile(const QString& filePath, SpecifierProfile& profile);
     
-    // Сохранение конфигурации спецификатора в файл
-    bool saveSpecifierConfig(const QString& filePath, const SpecifierConfig& config);
+    // Сохранение профиля спецификатора в файл
+    bool saveSpecifierProfile(const QString& filePath, const SpecifierProfile& profile);
     
-    // Получение списка всех конфигураций для модуля
-    QList<QString> getExportConfigs(ModuleType module);
-    QList<QString> getSpecifierConfigs(ModuleType module);
+    // Получение списка всех профилей для модуля
+    QList<ExportProfile> getExportProfiles(ModuleType module);
+    QList<SpecifierProfile> getSpecifierProfiles(ModuleType module);
     
-    // Создание новой конфигурации по умолчанию
-    ExportConfig createDefaultExportConfig(ModuleType module);
-    SpecifierConfig createDefaultSpecifierConfig(ModuleType module);
+    // Создание нового профиля по умолчанию
+    ExportProfile createDefaultExportProfile(ModuleType module);
+    SpecifierProfile createDefaultSpecifierProfile(ModuleType module);
     
-    // Валидация конфигурации
-    bool validateExportConfig(const ExportConfig& config, QStringList& errors);
-    bool validateSpecifierConfig(const SpecifierConfig& config, QStringList& errors);
+    // Валидация профиля
+    bool validateExportProfile(const ExportProfile& profile, QStringList& errors);
+    bool validateSpecifierProfile(const SpecifierProfile& profile, QStringList& errors);
     
     // Связывание спецификатора с экспортом
-    bool linkSpecifierToExport(SpecifierConfig& specifier, const ExportConfig& exportConfig);
+    bool linkSpecifierToExport(SpecifierProfile& specifier, const ExportProfile& exportProfile);
 
 signals:
-    void configLoaded(const QString& configName);
-    void configSaved(const QString& configName);
-    void configError(const QString& error);
+    void profileLoaded(const QString& profileName);
+    void profileSaved(const QString& profileName);
+    void profileError(const QString& error);
 
 private:
+    XmlParser m_parser;
     QString getModulePath(ModuleType module, bool isExport);
 };
 

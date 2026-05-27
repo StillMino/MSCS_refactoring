@@ -85,8 +85,8 @@ private:
     void loadExportConfigs(ModuleType module);
     void loadSpecifierConfigs(ModuleType module);
     
-    void showExportConfigDetails(const ExportConfig& config);
-    void showSpecifierConfigDetails(const SpecifierConfig& config);
+    void showExportConfigDetails(const ExportProfile& profile);
+    void showSpecifierConfigDetails(const SpecifierProfile& profile);
     
     void updateProfileList();
     void updateFieldTable();
@@ -129,8 +129,8 @@ private:
     
     // Текущее состояние
     ModuleType m_currentModule;
-    ExportConfig m_currentExportConfig;
-    SpecifierConfig m_currentSpecifierConfig;
+    ExportProfile m_currentExportProfile;
+    SpecifierProfile m_currentSpecifierProfile;
     bool m_isModified;
     bool m_isNewConfig;
 };
